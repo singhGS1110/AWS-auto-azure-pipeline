@@ -1,0 +1,12 @@
+parameters:
+- name: action
+  type: string
+  values:
+    - azure-pipelines
+    - delete
+
+stages:
+
+- stage: Execute
+  jobs:
+  - template: ${{ parameters.action }}.yml
