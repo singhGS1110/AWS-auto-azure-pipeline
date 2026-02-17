@@ -2,7 +2,7 @@ parameters:
 - name: action
   type: string
   values:
-    - azure-pipelines
+    - azure_pipeline_aws
     - delete
 
 stages:
