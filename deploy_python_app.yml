@@ -1,0 +1,60 @@
+- name: Deploy Static Sagar App Page with Apache
+  hosts: webservers
+  become: yes
+
+  vars:
+    app_dir: /var/www/html/sagarapp
+    repo_url: https://github.com/chsagar001/AWSAutomation.git
+    apache_site_conf_path: /etc/apache2/sites-available/sagarapp.conf
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - apache2
+          - git
+        state: present
+        update_cache: yes
+
+    - name: Clone Sagar app repo
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: HEAD
+        force: yes
+
+    - name: Deploy Apache site configuration
+      copy:
+        dest: "{{ apache_site_conf_path }}"
+        content: |
+          <VirtualHost *:80>
+              ServerName 44.222.222.171
+
+              DocumentRoot {{ app_dir }}
+
+              <Directory {{ app_dir }}>
+                  Options Indexes FollowSymLinks
+                  AllowOverride None
+                  Require all granted
+              </Directory>
+
+              ErrorLog ${APACHE_LOG_DIR}/sagar_error.log
+              CustomLog ${APACHE_LOG_DIR}/sagar_access.log combined
+          </VirtualHost>
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Enable sagarapp Apache site
+      command: a2ensite sagarapp.conf
+      args:
+        creates: /etc/apache2/sites-enabled/sagarapp.conf
+
+    - name: Disable default Apache site
+      command: a2dissite 000-default.conf
+      ignore_errors: yes
+
+    - name: Reload Apache to apply changes
+      service:
+        name: apache2
+        state: reloaded

@@ -1,0 +1,44 @@
+pipeline {
+    agent any
+ 
+    environment {
+        AWS_ACCESS_KEY_ID     = credentials('aws-access-key')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
+    }
+ 
+    stages {
+        stage('Checkout Repo') {
+            steps {
+                git branch: 'main', url: 'https://github.com/chsagar001/aws-automation.git'
+            }
+        }
+ 
+        stage('Verify Ansible & AWS Collection') {
+            steps {
+                sh '''
+                ansible --version
+                ansible-galaxy collection list | grep amazon.aws || echo "amazon.aws not found!"
+                '''
+            }
+        }
+ 
+        stage('Run Ansible Playbook') {
+            steps {
+                withEnv(["ANSIBLE_COLLECTIONS_PATHS=${env.HOME}/.ansible/collections:/usr/share/ansible/collections",
+                         "AWS_ACCESS_KEY_ID=${env.AWS_ACCESS_KEY_ID}",
+                         "AWS_SECRET_ACCESS_KEY=${env.AWS_SECRET_ACCESS_KEY}"]) {
+                    sh 'ansible-playbook -i localhost, launch_ec2_1.yml'
+                }
+            }
+        }
+    }
+ 
+    post {
+        failure {
+            echo 'AWS provisioning failed.'
+        }
+        success {
+            echo 'AWS provisioning successful.'
+        }
+    }
+}

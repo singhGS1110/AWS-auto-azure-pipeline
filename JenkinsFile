@@ -1,0 +1,82 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'requestId',    description: 'Unique Request ID (required)')
+        string(name: 'env',          description: 'Target Environment (required)')
+        string(name: 'templateName', description: 'Ansible Template Name (required)')
+        string(name: 'callbackUrl',  description: 'Callback URL (required)')
+    }
+
+    environment {
+        AWS_ACCESS_KEY_ID     = credentials('aws-access-key')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
+    }
+
+    stages {
+        stage('Pre-check Parameters') {
+            steps {
+                script {
+                    if (!requestId || !env || !templateName || !callbackUrl) {
+                        error "❌ One or more required parameters are missing. Stopping pipeline."
+                    }
+                }
+            }
+        }
+
+        stage('Checkout Repo') {
+            steps {
+                git branch: 'main', url: 'https://github.com/chsagar001/aws-automation.git'
+            }
+        }
+
+        stage('Run Ansible Playbook') {
+            steps {
+                withEnv([
+                    "ANSIBLE_COLLECTIONS_PATHS=${env.HOME}/.ansible/collections:/usr/share/ansible/collections",
+                    "AWS_ACCESS_KEY_ID=${env.AWS_ACCESS_KEY_ID}",
+                    "AWS_SECRET_ACCESS_KEY=${env.AWS_SECRET_ACCESS_KEY}"
+                ]) {
+                    sh """
+                    ansible-playbook -i localhost, ${templateName}.yml \
+                        -e env=${env} \
+                        -e request_id=${requestId} \
+                        -e callback_url=${callbackUrl}
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ AWS provisioning successful for requestId: ${requestId}"
+            sh '''
+                curl -s -u "admin:d/sVvPgW5\\$B7" -X POST \
+                  -H "Content-Type: application/json" \
+                  -d "{
+                        \\"request_id\\": \\"${requestId}\\",
+                        \\"templateName\\": \\"${templateName}\\",
+                        \\"env\\": \\"${env}\\",
+                        \\"status\\": \\"SUCCESS\\"
+                      }" \
+                  "${callbackUrl}"
+            '''
+        }
+
+        failure {
+            echo "❌ AWS provisioning failed for requestId: ${requestId}"
+            sh '''
+                curl -s -u "admin:d/sVvPgW5\\$B7" -X POST \
+                  -H "Content-Type: application/json" \
+                  -d "{
+                        \\"request_id\\": \\"${requestId}\\",
+                        \\"templateName\\": \\"${templateName}\\",
+                        \\"env\\": \\"${env}\\",
+                        \\"status\\": \\"FAILED\\"
+                      }" \
+                  "${callbackUrl}"
+            '''
+        }
+    }
+}
