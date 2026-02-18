@@ -1,0 +1,31 @@
+jobs:
+- job: CreateEC2
+  displayName: Create AWS Infrastructure
+  pool:
+    name: 'New agent'   # Replace with your self-hosted agent pool name
+
+  steps:
+  - script: |
+      echo "Setting locale to UTF-8"
+      export LANG=C.UTF-8
+      export LC_ALL=C.UTF-8
+      locale
+
+      python3 --version
+      python3 -m venv venv
+      source venv/bin/activate
+      pip install --upgrade pip
+      pip install ansible boto3 botocore
+      ansible-galaxy collection install amazon.aws
+    displayName: Setup Python & Install Ansible + AWS dependencies
+
+  - script: |
+      export LANG=C.UTF-8
+      export LC_ALL=C.UTF-8
+      source venv/bin/activate
+
+      ansible-playbook -i localhost, \
+        -e aws_access_key=$(AWS_ACCESS_KEY_ID) \
+        -e aws_secret_key=$(AWS_SECRET_ACCESS_KEY) \
+        azure_pipeline_aws.yml
+    displayName: Run Ansible Playbook for AWS
