@@ -1,3 +1,9 @@
+parameters:
+- name: playbook
+  displayName: Select playbook to run
+  type: string
+  default: azure_pipeline_aws.yml
+
 jobs:
 - job: CreateEC2
   displayName: Create AWS Infrastructure
@@ -6,12 +12,6 @@ jobs:
     
   variables:
   - group: New variable group
-
-  parameters:
-  - name: playbook
-    displayName: Select playbook to run
-    type: string
-    default: azure_pipeline_aws.yml
 
   steps:
   - script: |
@@ -36,5 +36,5 @@ jobs:
       ansible-playbook -i localhost, \
         -e aws_access_key=$(AWS_ACCESS_KEY_ID) \
         -e aws_secret_key=$(AWS_SECRET_ACCESS_KEY) \
-        azure_pipeline_aws.yml
+        ${{ parameters.playbook }}
     displayName: Run Ansible Playbook for AWS
