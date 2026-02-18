@@ -2,7 +2,7 @@ parameters:
 - name: action
   type: string
   values:
-    - azure-pipelines
+    - Create-resources
     - delete
 
 stages:
