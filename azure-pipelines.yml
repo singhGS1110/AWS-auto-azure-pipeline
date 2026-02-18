@@ -7,6 +7,12 @@ pool:
 variables:
 - group: New variable group 08-Sep
 
+parameters:
+- name: playbook
+  displayName: Select playbook to run
+  type: string
+  default: azure_pipeline_aws.yml
+
 steps:
 - script: |
     echo "Setting locale to UTF-8"
@@ -29,5 +35,5 @@ steps:
     ansible-playbook -i localhost, \
       -e aws_access_key=$(AWS_ACCESS_KEY_ID) \
       -e aws_secret_key=$(AWS_SECRET_ACCESS_KEY) \
-      azure_pipeline_aws.yml
+      ${{ parameters.playbook }}
   displayName: 'Run Ansible Playbook for AWS'
