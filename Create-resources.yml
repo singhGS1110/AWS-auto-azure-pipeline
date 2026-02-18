@@ -3,6 +3,9 @@ jobs:
   displayName: Create AWS Infrastructure
   pool:
     name: 'New agent'   # Replace with your self-hosted agent pool name
+    
+  variables:
+  - group: New variable group 08-Sep
 
   steps:
   - script: |
