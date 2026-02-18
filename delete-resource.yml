@@ -1,5 +1,14 @@
+jobs:
+- job: CreateEC2
+  displayName: Create AWS Infrastructure
+  pool:
+    name: 'New agent'   # Replace with your self-hosted agent pool name
+    
+  variables:
+  - group: New variable group 08-Sep
 
-- script: |
+  steps:
+  - script: |
     python -m venv venv
     source venv/bin/activate
 
